@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>milo embeds - build and send Discord embeds</title>
+<meta name="description" content="Build Discord embeds, see exactly how they look, and post them with milo utilities.">
+<meta name="theme-color" content="#0B1F3A">
+<link rel="icon" type="image/png" href="/assets/favicon.png">
+<link rel="stylesheet" href="/assets/app.css">
+</head>
+<body>
+<header class="top">
+  <div class="bar">
+    <a class="wordmark" href="https://milo-bot.xyz/"><img src="/assets/milo-happy.png" alt="">milo <span>embeds</span></a>
+    <div class="tools">
+      <button type="button" class="ghost" id="btn-json">JSON</button>
+      <button type="button" class="ghost" id="btn-share">Copy share link</button>
+      <button type="button" class="ghost" id="btn-clear">Start over</button>
+    </div>
+  </div>
+</header>
+
+<main class="layout">
+  <section class="editor" aria-label="Editor">
+
+    <details class="box" open id="box-send">
+      <summary>Post it with milo utilities</summary>
+      <ol class="steps">
+        <li>Make your message below. The preview shows how it will look.</li>
+        <li>Click <b>Copy code</b>.</li>
+        <li>In the server, run <code>/embed post</code>, pick the channel and paste the code.</li>
+      </ol>
+      <div class="actions">
+        <button type="button" class="btn" id="btn-code">Copy code</button>
+        <span class="code-size" id="code-size"></span>
+      </div>
+      <p class="hint">To change a message that's already posted, run <code>/embed load</code> on it, change it here,
+        then run <code>/embed edit</code> with the message link and the new code.</p>
+      <label>Load code <span class="opt">paste a code from <code>/embed load</code> or a teammate</span>
+        <span class="load-row"><input id="load-code" type="text" placeholder="m1...." spellcheck="false" autocomplete="off">
+        <button type="button" class="btn ghost-dark" id="btn-load">Load</button></span>
+      </label>
+      <p id="status" role="status"></p>
+    </details>
+
+    <details class="box" open>
+      <summary>Message</summary>
+      <label>Text above the embeds <span class="count" data-for="content"></span>
+        <textarea id="content" rows="3" maxlength="2000"></textarea>
+      </label>
+    </details>
+
+    <div id="embeds"></div>
+    <button type="button" class="add" id="btn-add-embed">+ Add embed</button>
+  </section>
+
+  <section class="preview-col" aria-label="Preview">
+    <div class="preview-head">
+      <span>Preview</span>
+      <span class="total" id="total"></span>
+    </div>
+    <div class="discord" id="preview"></div>
+  </section>
+</main>
+
+<dialog id="json-dialog">
+  <form method="dialog">
+    <h2>JSON</h2>
+    <p class="hint">The same format Discord's API and most bots use. Paste your own to load it.</p>
+    <textarea id="json" rows="18" spellcheck="false"></textarea>
+    <p id="json-error" class="error"></p>
+    <div class="actions">
+      <button type="button" class="btn" id="btn-json-apply">Load this</button>
+      <button type="button" class="btn ghost-dark" id="btn-json-copy">Copy</button>
+      <button class="btn ghost-dark" value="close">Close</button>
+    </div>
+  </form>
+</dialog>
+
+<template id="embed-template">
+  <details class="box embed-box" open>
+    <summary><span class="swatch"></span><span class="embed-name">Embed</span>
+      <span class="move">
+        <button type="button" data-act="up" title="Move up">Up</button>
+        <button type="button" data-act="down" title="Move down">Down</button>
+        <button type="button" data-act="copy" title="Duplicate">Copy</button>
+        <button type="button" data-act="remove" title="Remove">Remove</button>
+      </span>
+    </summary>
+    <div class="row color-row">
+      <label>Color
+        <span class="color-pick">
+          <input type="color" data-k="color">
+          <input type="text" data-k="colorText" maxlength="7" spellcheck="false">
+        </span>
+      </label>
+      <div class="presets">
+        <button type="button" data-color="#2EC4B6" title="Teal" style="background:#2EC4B6"></button>
+        <button type="button" data-color="#0B1F3A" title="Navy" style="background:#0B1F3A"></button>
+        <button type="button" data-color="#FFB703" title="Amber" style="background:#FFB703"></button>
+        <button type="button" data-color="#E5484D" title="Red" style="background:#E5484D"></button>
+        <button type="button" data-color="" title="No color" class="none">x</button>
+      </div>
+    </div>
+    <fieldset>
+      <legend>Author</legend>
+      <div class="row two">
+        <label>Name <input type="text" data-k="author.name" maxlength="256"></label>
+        <label>Icon URL <input type="url" data-k="author.icon_url"></label>
+      </div>
+      <label>Link <input type="url" data-k="author.url"></label>
+    </fieldset>
+    <fieldset>
+      <legend>Body</legend>
+      <label>Title <span class="count" data-for="title"></span><input type="text" data-k="title" maxlength="256"></label>
+      <label>Title link <input type="url" data-k="url"></label>
+      <label>Description <span class="count" data-for="description"></span>
+        <textarea data-k="description" rows="6" maxlength="4096"></textarea>
+      </label>
+    </fieldset>
+    <fieldset>
+      <legend>Fields <span class="opt">up to 25</span></legend>
+      <div class="fields"></div>
+      <button type="button" class="add small" data-act="add-field">+ Add field</button>
+    </fieldset>
+    <fieldset>
+      <legend>Images</legend>
+      <label>Big image URL <input type="url" data-k="image.url"></label>
+      <label>Thumbnail URL <span class="opt">small, top right</span> <input type="url" data-k="thumbnail.url"></label>
+    </fieldset>
+    <fieldset>
+      <legend>Footer</legend>
+      <div class="row two">
+        <label>Text <input type="text" data-k="footer.text" maxlength="2048"></label>
+        <label>Icon URL <input type="url" data-k="footer.icon_url"></label>
+      </div>
+      <div class="row two">
+        <label>Timestamp <input type="datetime-local" data-k="timestamp"></label>
+        <div class="stamp-btns"><button type="button" class="link" data-act="now">Now</button>
+          <button type="button" class="link" data-act="no-time">Clear</button></div>
+      </div>
+    </fieldset>
+  </details>
+</template>
+
+<template id="field-template">
+  <div class="field">
+    <div class="field-top">
+      <input type="text" data-f="name" placeholder="Field name" maxlength="256">
+      <label class="check"><input type="checkbox" data-f="inline"> Side by side</label>
+      <button type="button" class="link" data-act="field-up">Up</button>
+      <button type="button" class="link" data-act="field-down">Down</button>
+      <button type="button" class="link" data-act="field-remove">Remove</button>
+    </div>
+    <textarea data-f="value" rows="2" placeholder="Field text" maxlength="1024"></textarea>
+  </div>
+</template>
+
+<script src="/assets/markdown.js"></script>
+<script src="/assets/app.js"></script>
+</body>
+</html>
