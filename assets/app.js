@@ -1,9 +1,11 @@
 // milo embeds: make a Discord message with embeds, preview it, and turn it into a code that milo utilities
 // posts with /embed post. The code is "m1." + base64url(raw deflate(JSON)), the same as utilities/cogs/embeds.py.
+// A message is either embeds or a panel (Components v2, see panel.js); state.mode says which one is being made.
 (function () {
   "use strict";
 
   const MD = window.DiscordMarkdown;
+  const PANEL = window.MiloPanel;
   const $ = (sel, root) => (root || document).querySelector(sel);
   const DRAFT_KEY = "milo-embeds:draft";
   const LIMITS = { embeds: 10, fields: 25, total: 6000 };
@@ -20,6 +22,8 @@
   });
 
   const starter = () => ({
+    mode: "embeds",
+    layout: [],
     content: "",
     embeds: [Object.assign(blankEmbed(), {
       title: "Welcome to milo embeds",
@@ -35,7 +39,8 @@
   // ---- state ------------------------------------------------------------------
 
   function normalize(msg) {
-    const out = { content: msg.content || "", embeds: [] };
+    const out = { mode: msg.layout ? "panel" : (msg.mode === "panel" ? "panel" : "embeds"), content: msg.content || "", embeds: [],
+      layout: PANEL.normalize(msg.layout || msg.panel || []) };
     for (const e of (msg.embeds || []).slice(0, LIMITS.embeds)) {
       const b = blankEmbed();
       b.color = typeof e.color === "number" ? e.color : null;
@@ -75,11 +80,17 @@
   }
 
   function save() {
-    store.set(DRAFT_KEY, JSON.stringify(payload(false)));
+    const draft = Object.assign(embedPayload(false), { mode: state.mode, panel: PANEL.clean(state.layout) });
+    store.set(DRAFT_KEY, JSON.stringify(draft));
   }
 
   // What Discord gets: empty parts left out, so the API doesn't reject the message.
   function payload(forSend) {
+    if (state.mode === "panel") return { layout: PANEL.clean(state.layout) };
+    return embedPayload(forSend);
+  }
+
+  function embedPayload(forSend) {
     const out = {};
     if (state.content.trim()) out.content = state.content;
     out.embeds = state.embeds.map((e) => {
@@ -130,6 +141,16 @@
   // ---- editor -----------------------------------------------------------------
 
   function renderEditor() {
+    const panel = state.mode === "panel";
+    $("#panel-editor").hidden = !panel;
+    $("#embeds-editor").hidden = panel;
+    document.querySelectorAll("[data-mode]").forEach((b) => b.classList.toggle("on", b.dataset.mode === state.mode));
+    const open = [...document.querySelectorAll(".block-box")].map((d) => d.open);
+    PANEL.renderEditor($("#blocks"), state.layout, open);
+    renderEmbedEditor();
+  }
+
+  function renderEmbedEditor() {
     $("#content").value = state.content;
     const list = $("#embeds");
     const open = [...list.querySelectorAll(".embed-box")].map((d) => d.open);
@@ -176,8 +197,15 @@
       const max = { content: 2000, title: 256, description: 4096 }[el.dataset.for];
       el.textContent = text.length ? text.length + " / " + max : "";
     });
-    const total = state.embeds.reduce((n, e) => n + embedLength(e), 0);
     const el = $("#total");
+    if (state.mode === "panel") {
+      const text = PANEL.textLength(state.layout);
+      const parts = PANEL.partCount(state.layout);
+      el.textContent = text + " / " + PANEL.LIMITS.text + " characters - " + parts + " / " + PANEL.LIMITS.parts + " parts";
+      el.classList.toggle("over", text > PANEL.LIMITS.text || parts > PANEL.LIMITS.parts);
+      return;
+    }
+    const total = state.embeds.reduce((n, e) => n + embedLength(e), 0);
     el.textContent = total + " / " + LIMITS.total + " characters";
     el.classList.toggle("over", total > LIMITS.total);
   }
@@ -196,7 +224,9 @@
     const t = ev.target;
     if (t.id === "content") state.content = t.value;
     else if (t.id === "load-code") return;
-    else {
+    else if (t.closest("#panel-editor")) {
+      if (!PANEL.onInput(state.layout, t)) return;
+    } else {
       const box = t.closest(".embed-box");
       if (!box) return;
       const embed = state.embeds[box.dataset.index];
@@ -222,6 +252,17 @@
   document.addEventListener("click", (ev) => {
     const b = ev.target.closest("button");
     if (!b) return;
+    if (b.dataset.mode) {
+      if (b.dataset.mode === state.mode) return;
+      state.mode = b.dataset.mode;
+      if (state.mode === "panel" && !state.layout.length) state.layout = PANEL.starter();
+      return changed(true);
+    }
+    if (b.closest("#panel-editor")) {
+      if (b.closest("summary")) ev.preventDefault();
+      if (PANEL.onClick(state.layout, b)) changed(true);
+      return;
+    }
     const box = b.closest(".embed-box");
     const i = box ? Number(box.dataset.index) : -1;
     const embed = box ? state.embeds[i] : null;
@@ -267,7 +308,8 @@
 
   $("#btn-clear").addEventListener("click", () => {
     if (!confirm("Clear everything and start from an empty message?")) return;
-    state = { content: "", embeds: [blankEmbed()] };
+    state = state.mode === "panel" ? Object.assign(state, { layout: PANEL.starter() })
+      : Object.assign(state, { content: "", embeds: [blankEmbed()] });
     changed(true);
   });
 
@@ -342,15 +384,17 @@
       '<div class="msg"><img class="avatar" src="' + MD.escape(avatar) + '" alt="">' +
       '<div class="msg-body"><div class="msg-head"><span class="msg-name">' + MD.escape(name) + "</span>" +
       '<span class="tag">APP</span><span class="msg-time">Today at ' + now + "</span></div>" +
-      (state.content.trim() ? '<div class="msg-text">' + MD.render(state.content) + "</div>" : "") +
-      state.embeds.map(embedHtml).join("") +
-      (empty ? '<div class="msg-empty">Nothing to show yet. Add some text or an embed.</div>' : "") +
+      (state.mode === "panel" ? PANEL.previewHtml(state.layout) :
+        (state.content.trim() ? '<div class="msg-text">' + MD.render(state.content) + "</div>" : "") +
+        state.embeds.map(embedHtml).join("") +
+        (empty ? '<div class="msg-empty">Nothing to show yet. Add some text or an embed.</div>' : "")) +
       "</div></div>";
   }
 
   // ---- codes ----------------------------------------------------------------
 
   function problems() {
+    if (state.mode === "panel") return PANEL.problems(state.layout);
     const out = [];
     const p = payload(true);
     if (!p.content && !p.embeds) out.push("The message is empty.");
@@ -401,7 +445,10 @@
   function useData(data) {
     if (Array.isArray(data)) data = { embeds: data };
     else if (!data.embeds && (data.title || data.description || data.fields)) data = { embeds: [data] };
+    const before = state;
     state = normalize(data);
+    if (state.mode === "panel" && !state.embeds.length) Object.assign(state, { content: before.content, embeds: before.embeds });
+    if (state.mode === "embeds" && !state.layout.length) state.layout = before.layout;
     if (!state.embeds.length) state.embeds.push(blankEmbed());
     changed(true);
   }

@@ -191,3 +191,48 @@ dialog textarea { font-family: ui-monospace, Consolas, monospace; font-size: 13p
 .load-row input { margin: 0 !important; font-family: ui-monospace, Consolas, monospace; font-size: 14px !important; }
 .load-row .btn { padding: 7px 14px; font-size: 15px; flex: none; }
 #status { margin: 10px 0 0; }
+
+/* embeds or panel */
+.mode { display: flex; gap: 4px; background: #e6eceb; border-radius: 10px; padding: 4px; margin-bottom: 14px; }
+.mode button { flex: 1; border: 0; background: transparent; border-radius: 7px; padding: 8px 10px; font-weight: 800; color: var(--muted); }
+.mode button.on { background: #fff; color: var(--navy); box-shadow: 0 1px 2px rgba(11, 31, 58, .15); }
+.mode button .opt { font-size: 12px; }
+.panel-hint { margin: 0 0 12px; }
+.pitem { border: 1px solid var(--line); border-radius: 8px; padding: 8px; margin-top: 10px; background: #fbfcfc; }
+.pitem.solo { border: 0; padding: 0; background: none; margin-top: 0; }
+.pitem-top { display: flex; align-items: center; gap: 4px; }
+.pkind { font-weight: 800; font-size: 13px; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin-right: auto; }
+.pitem textarea { margin-top: 6px; }
+.pbutton { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr) auto; gap: 6px; margin-top: 6px; align-items: center; }
+.pbutton input { margin: 0 !important; }
+.sep-opts { display: flex; flex-wrap: wrap; gap: 4px 18px; }
+.sep-opts .check { margin-top: 6px; }
+.add-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.add-row .add { flex: 1 1 120px; width: auto; }
+#panel-editor > .add-row { margin-bottom: 14px; }
+@media (max-width: 520px) { .pbutton { grid-template-columns: 1fr; } }
+
+/* panel preview, like Discord's Components v2 */
+.c-box { margin-top: 8px; background: #393a41; border: 1px solid #44454c; border-radius: 8px; padding: 16px; max-width: 600px; }
+.c-box > :first-child { margin-top: 0; }
+.c-text { font-size: 15px; word-wrap: break-word; }
+.c-text + .c-text, .c-section + .c-text, .c-text + .c-section { margin-top: 8px; }
+.c-text h1:first-child, .c-text h2:first-child, .c-text h3:first-child { margin-top: 0; }
+.c-text h3 { font-size: 20px; }
+.c-section { display: flex; gap: 12px; justify-content: space-between; }
+.c-section .c-text { flex: 1; min-width: 0; }
+.c-thumb { width: 85px; height: 85px; border-radius: 8px; object-fit: cover; flex: none; }
+.c-sep { border-top: 1px solid #4e5058; margin: 8px 0; }
+.c-sep.large { margin: 16px 0; }
+.c-sep.hidden { border-color: transparent; }
+.c-gallery { margin-top: 8px; max-width: 600px; }
+.c-box .c-gallery { margin-top: 8px; }
+.c-image { display: block; width: 100%; border-radius: 8px; }
+.kept { display: flex; align-items: center; justify-content: center; text-align: center; background: #1e1f22; color: #949ba4;
+  border: 1px dashed #4e5058; font-size: 13px; padding: 10px; }
+div.c-image { min-height: 110px; }
+div.c-thumb { font-size: 11px; padding: 4px; }
+.c-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.c-box > .c-row:first-child { margin-top: 0; }
+.c-btn { display: inline-flex; align-items: center; gap: 6px; background: #4e5058; color: #fff; border-radius: 8px; padding: 6px 14px; font-size: 14px; font-weight: 500; }
+.c-btn svg { width: 14px; height: 14px; }

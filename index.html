@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>milo embeds - build and send Discord embeds</title>
+<title>milo embeds - build and send Discord embeds and panels</title>
 <meta name="description" content="Build Discord embeds, see exactly how they look, and post them with milo utilities.">
 <meta name="theme-color" content="#0B1F3A">
 <link rel="icon" type="image/png" href="/assets/favicon.png">
@@ -44,6 +44,22 @@
       <p id="status" role="status"></p>
     </details>
 
+    <div class="mode" role="group" aria-label="Kind of message">
+      <button type="button" data-mode="embeds">Embeds</button>
+      <button type="button" data-mode="panel">Panel <span class="opt">Components v2</span></button>
+    </div>
+
+    <div id="panel-editor" hidden>
+      <p class="hint panel-hint">A panel is the newer Discord style: an image on top, plain boxes with text and lines
+        between, and link buttons in their own box. <code>/embed load</code> opens posted panels here too.</p>
+      <div id="blocks"></div>
+      <div class="add-row">
+        <button type="button" class="add" data-pact="add-box">+ Add box</button>
+        <button type="button" class="add" data-pact="add-top-image">+ Add image</button>
+      </div>
+    </div>
+
+    <div id="embeds-editor">
     <details class="box" open>
       <summary>Message</summary>
       <label>Text above the embeds <span class="count" data-for="content"></span>
@@ -53,6 +69,7 @@
 
     <div id="embeds"></div>
     <button type="button" class="add" id="btn-add-embed">+ Add embed</button>
+    </div>
   </section>
 
   <section class="preview-col" aria-label="Preview">
@@ -158,6 +175,7 @@
 </template>
 
 <script src="/assets/markdown.js"></script>
+<script src="/assets/panel.js"></script>
 <script src="/assets/app.js"></script>
 </body>
 </html>
